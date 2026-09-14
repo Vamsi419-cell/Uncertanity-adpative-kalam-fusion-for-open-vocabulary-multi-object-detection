@@ -1,0 +1,36 @@
+# Dataset
+data/ovtb/OVT-B
+data/ovtb/OVT-B/**
+data/ovtb/ovtb_ann.json
+data/ovtb/ovtb_10k_ann.json
+
+# Model checkpoints
+saved_models/
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+
+# Experiment outputs
+work_dirs/
+outputs/
+results/
+logs/
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

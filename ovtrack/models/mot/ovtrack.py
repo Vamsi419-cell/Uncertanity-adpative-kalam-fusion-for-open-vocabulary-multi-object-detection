@@ -30,6 +30,8 @@ class OVTrack(TwoStageDetector):
         self.prepare_cfg(kwargs)
         super().__init__(*args, **kwargs)
         self.tracker_cfg = tracker
+        self.motion = None
+        self.motion = None
         self.motion_cfg = motion
         self.method = method
         print(self.method)

@@ -1,6 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-from .kalman_filter import KalmanFilter
+# Motion models are disabled for the current OVTracker baseline evaluation.
+# from .kalman_filter import KalmanFilter
 
-__all__ = [
-    'KalmanFilter'
-]
+__all__ = []
