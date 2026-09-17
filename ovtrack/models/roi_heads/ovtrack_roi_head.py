@@ -31,10 +31,12 @@ class OVTrackRoIHead(StandardRoIHead):
         ensemble=True,
         custom_classes=False,
         dynamic_rcnn_thre=True,
+        return_uncertainty=False,
         *args,
         **kwargs
     ):
         super().__init__(*args, **kwargs)
+        self.return_uncertainty = return_uncertainty
 
 
         if track_head is not None:
@@ -398,6 +400,17 @@ class OVTrackRoIHead(StandardRoIHead):
             cem_feats = self._cem_forward(x, [track_bboxes])
         else:
             cem_feats = None
+
+        if getattr(self, "return_uncertainty", False):
+            from ..trackers.uncertainty_estimator import UncertaintyEstimator
+            estimator = getattr(self, "_uncertainty_estimator", None)
+            if estimator is None:
+                estimator = UncertaintyEstimator()
+                self._uncertainty_estimator = estimator
+            uncertainties = estimator.estimate(scores=det_bboxes[:, -1], num_dets=det_bboxes.size(0))
+            if isinstance(uncertainties, np.ndarray):
+                uncertainties = torch.from_numpy(uncertainties).to(det_bboxes.device)
+            return det_bboxes, det_labels, cem_feats, track_feats, uncertainties
 
         return det_bboxes, det_labels, cem_feats, track_feats
 

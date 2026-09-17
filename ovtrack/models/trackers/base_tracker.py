@@ -3,8 +3,26 @@ from abc import ABCMeta, abstractmethod
 
 import torch
 import torch.nn.functional as F
-from addict import Dict
-from mmcv.runner import BaseModule
+try:
+    from addict import Dict
+except ImportError:
+    class Dict(dict):
+        def __getattr__(self, name):
+            try:
+                return self[name]
+            except KeyError:
+                raise AttributeError(name)
+        def __setattr__(self, name, value):
+            self[name] = value
+
+try:
+    from mmcv.runner import BaseModule
+except ImportError:
+    import torch.nn as nn
+    class BaseModule(nn.Module):
+        def __init__(self, init_cfg=None):
+            super().__init__()
+            self.init_cfg = init_cfg
 
 from ..builder import TRACKERS
 

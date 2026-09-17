@@ -31,6 +31,9 @@ class OVTrack(TwoStageDetector):
         super().__init__(*args, **kwargs)
         self.tracker_cfg = tracker
         self.motion_cfg = motion
+        self.motion = None
+        if self.motion_cfg is not None:
+            self.init_motion()
         self.method = method
         print(self.method)
         self.freeze_detector = freeze_detector
@@ -159,7 +162,12 @@ class OVTrack(TwoStageDetector):
         proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
         outputs = self.roi_head.simple_test(x, img_metas, proposal_list, rescale)
         
-        if len(outputs) == 4:
+        uncertainties = None
+        if len(outputs) >= 5:
+            det_bboxes, det_labels, cem_feats, track_feats, uncertainties = outputs[:5]
+            if cem_feats is None:
+                cem_feats = copy.deepcopy(track_feats)
+        elif len(outputs) == 4:
             det_bboxes, det_labels, cem_feats, track_feats = outputs
             if cem_feats is None:
                 cem_feats = copy.deepcopy(track_feats)
@@ -168,9 +176,9 @@ class OVTrack(TwoStageDetector):
             cem_feats = copy.deepcopy(track_feats)
 
         if track_feats is not None:
-            if self.motion is not None:
+            if getattr(self, "motion", None) is not None and frame_id == 0:
                 self.init_motion()
-            bboxes, labels, ids = self.tracker.track(
+            track_kwargs = dict(
                 model=self,
                 bboxes=det_bboxes,
                 labels=det_labels,
@@ -179,6 +187,9 @@ class OVTrack(TwoStageDetector):
                 frame_id=frame_id,
                 method=self.method,
             )
+            if uncertainties is not None:
+                track_kwargs["uncertainties"] = uncertainties
+            bboxes, labels, ids = self.tracker.track(**track_kwargs)
         
         bbox_result = bbox2result(det_bboxes, det_labels, self.roi_head.num_classes)
                 

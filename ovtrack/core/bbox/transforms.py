@@ -1,6 +1,11 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from mmdet.core.bbox.transforms import bbox_xyxy_to_cxcywh
+
+try:
+    from mmdet.core.bbox.transforms import bbox_xyxy_to_cxcywh
+except ImportError:
+    def bbox_xyxy_to_cxcywh(bbox):
+        x1, y1, x2, y2 = bbox.split((1, 1, 1, 1), dim=-1)
+        return torch.cat([(x1 + x2) * 0.5, (y1 + y2) * 0.5, x2 - x1, y2 - y1], dim=-1)
 
 
 def quad2bbox(quad):

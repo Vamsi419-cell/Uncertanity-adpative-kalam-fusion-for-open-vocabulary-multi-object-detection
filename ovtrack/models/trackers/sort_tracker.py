@@ -1,9 +1,38 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 import torch
-from mmcv.runner import force_fp32
-from mmdet.core import bbox_overlaps
-from motmetrics.lap import linear_sum_assignment
+try:
+    from mmcv.runner import force_fp32
+except ImportError:
+    def force_fp32(*args, **kwargs):
+        def _dec(f):
+            return f
+        return _dec
+
+try:
+    from mmdet.core import bbox_overlaps
+except ImportError:
+    def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
+        if bboxes1.numel() == 0 or bboxes2.numel() == 0:
+            return torch.zeros((bboxes1.size(0), bboxes2.size(0)), device=bboxes1.device)
+        b1_x1, b1_y1, b1_x2, b1_y2 = bboxes1[:, 0:1], bboxes1[:, 1:2], bboxes1[:, 2:3], bboxes1[:, 3:4]
+        b2_x1, b2_y1, b2_x2, b2_y2 = bboxes2[:, 0:1].t(), bboxes2[:, 1:2].t(), bboxes2[:, 2:3].t(), bboxes2[:, 3:4].t()
+        inter_x1 = torch.max(b1_x1, b2_x1)
+        inter_y1 = torch.max(b1_y1, b2_y1)
+        inter_x2 = torch.min(b1_x2, b2_x2)
+        inter_y2 = torch.min(b1_y2, b2_y2)
+        inter_w = torch.clamp(inter_x2 - inter_x1, min=0)
+        inter_h = torch.clamp(inter_y2 - inter_y1, min=0)
+        inter_area = inter_w * inter_h
+        area1 = torch.clamp(b1_x2 - b1_x1, min=0) * torch.clamp(b1_y2 - b1_y1, min=0)
+        area2 = torch.clamp(b2_x2 - b2_x1, min=0) * torch.clamp(b2_y2 - b2_y1, min=0)
+        union_area = area1 + area2 - inter_area
+        return inter_area / torch.clamp(union_area, min=eps)
+
+try:
+    from motmetrics.lap import linear_sum_assignment
+except ImportError:
+    from scipy.optimize import linear_sum_assignment
 
 # from mmtrack.core import imrenormalize
 from ovtrack.core.bbox import bbox_xyxy_to_cxcyah
