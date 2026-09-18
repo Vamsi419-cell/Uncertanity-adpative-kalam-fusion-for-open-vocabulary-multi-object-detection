@@ -1,5 +1,5 @@
 from mmdet.datasets.builder import DATASETS, PIPELINES
-from .bdd_video_dataset import BDDVideoDataset
+#from .bdd_video_dataset import BDDVideoDataset
 from .builder import build_dataloader, build_dataset
 from .coco_video_dataset import CocoVideoDataset
 from .parsers import CocoVID
@@ -16,7 +16,7 @@ __all__ = [
     "build_dataloader",
     "build_dataset",
     "CocoVID",
-    "BDDVideoDataset",
+    #"BDDVideoDataset",
     "CocoVideoDataset",
     "LoadMultiImagesFromFile",
     "SeqLoadAnnotations",

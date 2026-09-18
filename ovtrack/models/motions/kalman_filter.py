@@ -2,10 +2,10 @@
 import numpy as np
 import scipy.linalg
 
-from ..builder import MOTION
+from ..builder import MOTIONS
 
 
-@MOTION.register_module()
+@MOTIONS.register_module()
 class KalmanFilter(object):
     """A simple Kalman filter for tracking bounding boxes in image space.
 
