@@ -133,22 +133,19 @@ class UAKFOVTracker(OVSortTracker):
 
     def update_track(self, id, obj):
         """Update track with uncertainty-gated appearance and adaptive Kalman."""
-        super().update_track(id, obj)
-
-        # Retrieve matched uncertainty for this track in the current frame
         u = self._matched_uncertainties.get(id, None)
 
-        # Apply uncertainty-gated appearance update if enabled
-        if self.enable_appearance_gating and u is not None:
-            # Embeddings are stored under 'embeds' in obj
-            embed_idx = self.memo_items.index('embeds') if 'embeds' in self.memo_items else -1
-            if embed_idx >= 0:
-                new_embed = obj[embed_idx][None]
-                base_m = self.momentums.get('embeds', 0.2)
-                # Gate learning rate: confident -> high alpha; uncertain -> low alpha
-                alpha = base_m * max(self.appearance_gate_min, 1.0 - float(u))
-                # Re-smooth embedding with gated alpha
-                self.tracks[id]['embeds'] = (1.0 - alpha) * self.tracks[id]['embeds'] + alpha * new_embed
+        # Custom buffer update to avoid OVSortTracker double-update bug
+        for k, v in zip(self.memo_items, obj):
+            v = v[None]
+            if self.momentums is not None and k in self.momentums:
+                m = self.momentums[k]
+                # Apply uncertainty-gated appearance update if enabled
+                if k == 'embeds' and self.enable_appearance_gating and u is not None:
+                    m = m * max(self.appearance_gate_min, 1.0 - float(u))
+                self.tracks[id][k] = (1 - m) * self.tracks[id][k] + m * v
+            else:
+                self.tracks[id][k].append(v)
 
         # Adaptive Kalman update
         bbox = bbox_xyxy_to_cxcyah(self.tracks[id].bboxes[-1])

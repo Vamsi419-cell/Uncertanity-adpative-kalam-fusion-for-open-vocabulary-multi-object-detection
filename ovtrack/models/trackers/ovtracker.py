@@ -204,7 +204,9 @@ class OVTracker(object):
                         temperature=temperature,
                     )
 
-                    exps = torch.exp(sims)
+                    sims_clamped = torch.clamp(sims, min=-30.0, max=30.0)
+                    sims_clamped = torch.nan_to_num(sims_clamped, nan=0.0)
+                    exps = torch.exp(sims_clamped)
                     d2t_scores = exps / (exps.sum(dim=1).view(-1, 1) + 1e-6)
                     t2d_scores = exps / (exps.sum(dim=0).view(1, -1) + 1e-6)
                     cos_scores = cal_similarity(embeds, memo_embeds, method="cosine")
@@ -266,7 +268,9 @@ class OVTracker(object):
                         temperature=temperature,
                     )
                     cat_same = labels.view(-1, 1) == memo_labels.view(1, -1)
-                    exps = torch.exp(sims) * cat_same.to(sims.device)
+                    sims_clamped = torch.clamp(sims, min=-30.0, max=30.0)
+                    sims_clamped = torch.nan_to_num(sims_clamped, nan=0.0)
+                    exps = torch.exp(sims_clamped) * cat_same.to(sims.device)
                     d2t_scores = exps / (exps.sum(dim=1).view(-1, 1) + 1e-6)
                     t2d_scores = exps / (exps.sum(dim=0).view(1, -1) + 1e-6)
                     cos_scores = cal_similarity(embeds, memo_embeds, method="cosine")

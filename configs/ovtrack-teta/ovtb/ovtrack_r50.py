@@ -157,7 +157,7 @@ test_cfg = dict(
     rcnn=dict(
         score_thr=0.0001,
         nms=dict(type='nms', iou_threshold=0.5, class_agnostic=True, split_thr=1000000),
-        max_per_img=50)
+        max_per_img=150)
 
 )
 )
@@ -264,7 +264,7 @@ data = dict(
 
 )
 
-optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.005, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=None)
 
 lr_config = dict(
