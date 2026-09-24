@@ -12,6 +12,8 @@ from .coco_video_dataset import CocoVideoDataset
 from .parsers import COCO, CocoVID
 
 def majority_vote(prediction):
+    if not prediction:
+        return []
 
     tid_res_mapping = {}
     for res in prediction:
@@ -29,6 +31,7 @@ def majority_vote(prediction):
     class_by_majority_count_res = []
     for tid, group in tqdm.tqdm(groued_df_pred_res):
         cid = group["category_id"].mode()[0]
+        group = group.copy()
         group["category_id"] = cid
         dict_list = group.to_dict("records")
         class_by_majority_count_res += dict_list
@@ -149,13 +152,13 @@ class OVTBDataset(CocoVideoDataset):
         result_files = dict()
 
         bbox_results = self._det2json(results["bbox_results"])
-        result_files["bbox"] = f"{resfile_path}/ovtb_bbox.json"
+        result_files["bbox"] = os.path.join(resfile_path, "ovtb_bbox.json")
         mmcv.dump(bbox_results, result_files["bbox"])
 
         track_results = self._track2json(results["track_results"])
         if tcc:
             track_results = majority_vote(track_results)
-        result_files["track"] = f"{resfile_path}/ovtb_track.json"
+        result_files["track"] = os.path.join(resfile_path, "ovtb_track.json")
         mmcv.dump(track_results, result_files["track"])
 
         return result_files, tmp_dir
@@ -181,6 +184,11 @@ class OVTBDataset(CocoVideoDataset):
                 raise KeyError(f"metric {metric} is not supported.")
 
         result_files, tmp_dir = self.format_results(results, resfile_path)
+        if resfile_path is None:
+            if tmp_dir is not None:
+                resfile_path = tmp_dir.name
+            else:
+                resfile_path = os.path.dirname(result_files["track"])
 
         eval_results = dict()
 
@@ -211,7 +219,8 @@ class OVTBDataset(CocoVideoDataset):
             eval_results_path = os.path.join(
                 resfile_path, "OVTrack", "teta_summary_results.pth"
             )
-            eval_res = pickle.load(open(eval_results_path, "rb"))
+            with open(eval_results_path, "rb") as f:
+                eval_res = pickle.load(f)
 
             base_class_synset = set(
                 [
@@ -228,10 +237,17 @@ class OVTBDataset(CocoVideoDataset):
                 ]
             )
 
-            compute_teta_on_ovsetup(eval_res, base_class_synset, novel_class_synset)
+            freq_teta_mean, rare_teta_mean = compute_teta_on_ovsetup(
+                eval_res, base_class_synset, novel_class_synset
+            )
+            eval_results["Base_TETA50"] = freq_teta_mean
+            eval_results["Novel_TETA50"] = rare_teta_mean
 
         if tmp_dir is not None:
-            tmp_dir.cleanup()
+            try:
+                tmp_dir.cleanup()
+            except Exception as e:
+                print(f"[Windows Info] Temporary directory cleanup deferred: {e}")
 
         return eval_results
 
