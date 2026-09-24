@@ -194,6 +194,7 @@ class OVTBDataset(CocoVideoDataset):
             default_eval_config["DISPLAY_LESS_PROGRESS"] = True
             default_eval_config["OUTPUT_TEM_RAW_DATA"] = True
             default_eval_config["NUM_PARALLEL_CORES"] = 8
+            default_eval_config["USE_PARALLEL"] = False
             default_dataset_config = teta.config.get_default_dataset_config()
             default_dataset_config["TRACKERS_TO_EVAL"] = ["OVTrack"]
             default_dataset_config["GT_FOLDER"] = self.ann_file

@@ -9,6 +9,7 @@ from mmdet.core import bbox2roi, build_assigner, build_sampler
 from mmdet.models import HEADS, build_head, build_roi_extractor
 from mmdet.models.roi_heads import StandardRoIHead
 from tqdm import tqdm
+import numpy as np
 
 from .class_name import *
 
