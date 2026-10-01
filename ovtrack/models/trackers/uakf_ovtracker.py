@@ -153,12 +153,16 @@ class UAKFOVTracker(OVSortTracker):
         bbox = bbox.squeeze(0).cpu().numpy()
 
         if self.enable_adaptive_r and hasattr(self.kf, 'update'):
-            # Check if self.kf supports the uncertainty parameter
+            # Check if self.kf supports the uncertainty parameter.
+            # Only fall back on TypeError that is specifically about the unexpected
+            # keyword argument — not TypeErrors from within the adaptive update itself.
             try:
                 self.tracks[id].mean, self.tracks[id].covariance = self.kf.update(
                     self.tracks[id].mean, self.tracks[id].covariance, bbox, uncertainty=u)
-            except TypeError:
-                # Standard KalmanFilter fallback
+            except TypeError as e:
+                if 'uncertainty' not in str(e):
+                    raise  # Re-raise any TypeError not related to the kwarg
+                # Standard KalmanFilter fallback (doesn't accept uncertainty kwarg)
                 self.tracks[id].mean, self.tracks[id].covariance = self.kf.update(
                     self.tracks[id].mean, self.tracks[id].covariance, bbox)
         else:

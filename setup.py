@@ -99,7 +99,7 @@ if __name__ == '__main__':
         description='A template for pytorch projects.',
         long_description=readme(),
         packages=find_packages(exclude=('configs', 'tools', 'demo')),
-        package_data={'ovtrack.ops': ['*/*.so']},
+        package_data={'ovtrack.ops': ['*/*.so', '*/*.pyd', '*/*.dll']},
         classifiers=[
             'Development Status :: 4 - Beta',
             'License :: OSI Approved :: Apache Software License',

@@ -146,20 +146,26 @@ model = dict(
     tracker=dict(
         type='UAKFOVTracker',
         match_score_thr=0.5,
-        num_frames_retain=30,
-        momentum_embed=0.2,
+        # OVT-B tuned: objects disappear longer in sparse-frame video
+        num_frames_retain=60,
+        # OVT-B tuned: slightly faster appearance adaptation than default 0.2
+        momentum_embed=0.35,
+        # Keep IoU base weight low — sparse frames make motion prediction weak
         motion_weight=0.03,
-        motion_weight_max=0.35,
+        # OVT-B tuned: conservative max IoU weight for sparse video
+        motion_weight_max=0.30,
         enable_adaptive_r=True,
         enable_adaptive_weight=True,
         enable_appearance_gating=True,
         kalman_mapping='linear',
         kalman_beta=3.0,
         kalman_max_scale=10.0,
-        w_entropy=0.4,
-        w_margin=0.3,
-        w_score=0.3,
-        ema_gamma=0.5,
+        # OVT-B tuned: entropy is the strongest signal over 1053 classes
+        w_entropy=0.6,
+        w_margin=0.25,
+        w_score=0.15,
+        # OVT-B tuned: slightly less reactive EMA smoothing
+        ema_gamma=0.4,
         appearance_gate_min=0.05,
     ),
     test_cfg=dict(
@@ -274,7 +280,7 @@ lr_config = dict(
     step=[3, 5])
 total_epochs = 6
 load_from = 'saved_models/pretrained_models/ovtrack_clip_distillation.pth'
-evaluation = dict(metric=['track'], start=6, interval=1, resfile_path='/scratch/tmp/')
+evaluation = dict(metric=['track'], start=6, interval=1, resfile_path=None)
 
 checkpoint_config = dict(interval=1, create_symlink=False)
 log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])

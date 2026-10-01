@@ -149,13 +149,13 @@ class OVTBDataset(CocoVideoDataset):
         result_files = dict()
 
         bbox_results = self._det2json(results["bbox_results"])
-        result_files["bbox"] = f"{resfile_path}/ovtb_bbox.json"
+        result_files["bbox"] = os.path.join(resfile_path, "ovtb_bbox.json")
         mmcv.dump(bbox_results, result_files["bbox"])
 
         track_results = self._track2json(results["track_results"])
         if tcc:
             track_results = majority_vote(track_results)
-        result_files["track"] = f"{resfile_path}/ovtb_track.json"
+        result_files["track"] = os.path.join(resfile_path, "ovtb_track.json")
         mmcv.dump(track_results, result_files["track"])
 
         return result_files, tmp_dir
@@ -181,6 +181,9 @@ class OVTBDataset(CocoVideoDataset):
                 raise KeyError(f"metric {metric} is not supported.")
 
         result_files, tmp_dir = self.format_results(results, resfile_path)
+        if tmp_dir is not None:
+            resfile_path = tmp_dir.name
+
 
         eval_results = dict()
 
@@ -194,7 +197,7 @@ class OVTBDataset(CocoVideoDataset):
             default_eval_config["DISPLAY_LESS_PROGRESS"] = True
             default_eval_config["OUTPUT_TEM_RAW_DATA"] = True
             default_eval_config["NUM_PARALLEL_CORES"] = 8
-            default_eval_config["USE_PARALLEL"] = False
+            default_eval_config["USE_PARALLEL"] = True
             default_dataset_config = teta.config.get_default_dataset_config()
             default_dataset_config["TRACKERS_TO_EVAL"] = ["OVTrack"]
             default_dataset_config["GT_FOLDER"] = self.ann_file

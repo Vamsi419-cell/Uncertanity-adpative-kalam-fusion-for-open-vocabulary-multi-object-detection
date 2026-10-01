@@ -26,3 +26,30 @@ wheels/
 .coverage
 htmlcov/
 *.log
+# Dataset (large, shouldn't go to GitHub — goes on pendrive/local only)
+data/ovtb/OVT-B/
+data/ovtb/*.json
+data/tao/
+
+# Model weights/checkpoints (large binary files)
+saved_models/
+
+# Evaluation outputs / logs (regenerable, clutters history)
+eval_log.txt
+our_eval_log.txt
+eval_results/
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS/editor junk
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Conda/venv (if ever created inside the repo)
+.conda/
+venv/

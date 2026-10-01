@@ -383,7 +383,7 @@ class OVTrackRoIHead(StandardRoIHead):
 
     def simple_test(self, x, img_metas, proposal_list, rescale, **kwargs):
 
-        det_bboxes, det_labels = self.simple_test_bboxes(
+        det_bboxes, det_labels, det_cls_probs = self.simple_test_bboxes(
             x, img_metas, proposal_list, self.test_cfg, rescale=rescale
         )
 
@@ -408,7 +408,12 @@ class OVTrackRoIHead(StandardRoIHead):
             if estimator is None:
                 estimator = UncertaintyEstimator()
                 self._uncertainty_estimator = estimator
-            uncertainties = estimator.estimate(scores=det_bboxes[:, -1], num_dets=det_bboxes.size(0))
+            # Use the full CLIP class distribution (entropy + margin + score)
+            cls_probs_tensor = det_cls_probs[0] if (det_cls_probs and det_cls_probs[0].size(0) > 0) else None
+            uncertainties = estimator.estimate(
+                cls_probs=cls_probs_tensor,
+                scores=det_bboxes[:, -1]
+            )
             if isinstance(uncertainties, np.ndarray):
                 uncertainties = torch.from_numpy(uncertainties).to(det_bboxes.device)
             return det_bboxes, det_labels, cem_feats, track_feats, uncertainties
@@ -558,7 +563,8 @@ class OVTrackRoIHead(StandardRoIHead):
         # apply bbox post-processing to each image individually
         det_bboxes = []
         det_labels = []
-        
+        det_cls_probs = []
+
         for i in range(len(proposals)):
             det_bbox, det_label = self.bbox_head.get_bboxes(
                 rois[i],
@@ -572,7 +578,29 @@ class OVTrackRoIHead(StandardRoIHead):
             det_bboxes.append(det_bbox)
             det_labels.append(det_label)
 
-        return det_bboxes, det_labels
+            # Match each surviving detection back to its pre-NMS cls_score row.
+            # det_bbox[:, -1] is the ensemble class probability for the detected label,
+            # so we find the proposal whose score for that class is closest.
+            c_score = cls_score[i]  # (N_proposals, C)
+            n_dets = det_bbox.size(0)
+            if n_dets > 0 and c_score.size(0) > 0:
+                matched = torch.zeros(
+                    (n_dets, c_score.size(1)), dtype=c_score.dtype, device=c_score.device
+                )
+                for j in range(n_dets):
+                    lj = int(det_label[j].item())
+                    sj = det_bbox[j, -1]
+                    diff = (c_score[:, lj] - sj).abs()
+                    k = int(diff.argmin().item())
+                    matched[j] = c_score[k]
+                det_cls_probs.append(matched)
+            else:
+                num_cls = c_score.size(1) if c_score.size(0) > 0 else 1
+                det_cls_probs.append(
+                    torch.zeros((n_dets, num_cls), dtype=torch.float32, device=det_bbox.device)
+                )
+
+        return det_bboxes, det_labels, det_cls_probs
 
 
 class GatherLayer(torch.autograd.Function):

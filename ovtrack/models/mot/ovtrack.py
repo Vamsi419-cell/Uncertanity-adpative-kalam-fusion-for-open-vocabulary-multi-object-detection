@@ -30,14 +30,11 @@ class OVTrack(TwoStageDetector):
         self.prepare_cfg(kwargs)
         super().__init__(*args, **kwargs)
         self.tracker_cfg = tracker
-        self.motion = None
-        self.motion = None
         self.motion_cfg = motion
         self.motion = None
         if self.motion_cfg is not None:
             self.init_motion()
         self.method = method
-        print(self.method)
         self.freeze_detector = freeze_detector
         self.save_dets = save_dets
         self.use_fixed_dets = use_fixed_dets
@@ -148,9 +145,6 @@ class OVTrack(TwoStageDetector):
     def simple_test(self, img, img_metas, rescale=False):
 
         assert self.roi_head.with_track, "Track head must be implemented."
-        img_name = img_metas[0]["filename"]
-        if img_name is not None:
-            pickle_name = img_name.replace("/", "-").replace(".jpg", ".pth")
 
         frame_id = img_metas[0].get("frame_id", -1)
         if frame_id == 0:
