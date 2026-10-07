@@ -53,3 +53,17 @@ Thumbs.db
 # Conda/venv (if ever created inside the repo)
 .conda/
 venv/
+
+# Hyperparameter tuning outputs (large, regenerable)
+hparam_results/
+hparam_results_r2/
+optuna_results/
+
+# Evaluation result directories (large JSON tracking outputs, ~2GB each)
+eval_results/
+eval_results_*/
+
+# Loose log/result files
+eval_detpro_baseline.txt
+hparam_log.txt.txt
+*.txt.txt

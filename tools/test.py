@@ -144,6 +144,14 @@ def main():
         if args.out:
             print(f'\nwriting results to {args.out}')
             mmcv.dump(outputs, args.out)
+        elif args.eval:
+            import tempfile
+            backup_path = os.path.join(tempfile.gettempdir(), 'ovtrack_inference_backup.pkl')
+            print(f'\n[Windows Safety Backup] Auto-saving raw inference outputs to {backup_path}')
+            try:
+                mmcv.dump(outputs, backup_path)
+            except Exception as e:
+                print(f'[Windows Safety Backup] Warning: auto-backup failed: {e}')
         kwargs = {} if args.eval_options is None else args.eval_options
         if args.format_only:
             dataset.format_results(outputs, **kwargs)
