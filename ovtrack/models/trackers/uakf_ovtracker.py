@@ -135,6 +135,13 @@ class UAKFOVTracker(OVSortTracker):
         """Update track with uncertainty-gated appearance and adaptive Kalman."""
         u = self._matched_uncertainties.get(id, None)
 
+        # Promote tentative tracks to confirmed once they have enough observations.
+        # This replicates the logic from SortTracker.update_track() which we
+        # deliberately bypass to avoid the OVSortTracker double Kalman update bug.
+        if self.tracks[id].tentative:
+            if len(self.tracks[id]['bboxes']) >= self.num_tentatives:
+                self.tracks[id].tentative = False
+
         # Custom buffer update to avoid OVSortTracker double-update bug
         for k, v in zip(self.memo_items, obj):
             v = v[None]

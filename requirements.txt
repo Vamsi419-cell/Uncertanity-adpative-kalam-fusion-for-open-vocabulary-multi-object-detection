@@ -1,6 +1,7 @@
 lvis
 motmetrics
 pycocotools
+scipy
 seaborn
 tqdm
 h5py
@@ -10,4 +11,4 @@ h5py
 einops
 ftfy
 Regex
-numpy==1.21.1
+numpy>=1.21.1

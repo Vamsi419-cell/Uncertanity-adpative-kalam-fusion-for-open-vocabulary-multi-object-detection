@@ -169,14 +169,12 @@ def run_trial(trial_id, params, trial_dir):
     log_file = os.path.join(trial_dir, "eval_log.txt")
     cfg_opts = build_cfg_options(params)
 
-    cmd = (
-        f'conda run -n {CONDA_ENV} python tools/test.py '
-        f'{BASE_CONFIG} {CHECKPOINT} '
-        f'--eval track '
-        f'--eval-options resfile_path={trial_dir} '
-        f'--cfg-options {cfg_opts} '
-        f'> {log_file} 2>&1'
-    )
+    cmd = [
+        "conda", "run", "-n", CONDA_ENV, "python",
+        "tools/test.py", BASE_CONFIG, CHECKPOINT,
+        "--eval", "track", "--eval-options", f"resfile_path={trial_dir}",
+        "--cfg-options", *cfg_opts.split(),
+    ]
 
     print(f"\n{'='*70}")
     print(f"  Trial {trial_id:03d}  [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]")
@@ -188,7 +186,10 @@ def run_trial(trial_id, params, trial_dir):
     print(f"{'='*70}")
 
     t0 = time.time()
-    ret = subprocess.run(cmd, shell=True)
+    with open(log_file, "w", encoding="utf-8") as log:
+        ret = subprocess.run(
+            cmd, stdout=log, stderr=subprocess.STDOUT, check=False
+        )
     elapsed = time.time() - t0
 
     if ret.returncode != 0:

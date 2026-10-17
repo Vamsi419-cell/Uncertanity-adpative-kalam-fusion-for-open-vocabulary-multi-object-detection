@@ -189,13 +189,13 @@ class TaoDataset(CocoVideoDataset):
         result_files = dict()
 
         bbox_results = self._det2json(results["bbox_results"])
-        result_files["bbox"] = f"{resfile_path}/tao_bbox.json"
+        result_files["bbox"] = os.path.join(resfile_path, "tao_bbox.json")
         mmcv.dump(bbox_results, result_files["bbox"])
 
         track_results = self._track2json(results["track_results"])
         if tcc:
             track_results = majority_vote(track_results)
-        result_files["track"] = f"{resfile_path}/tao_track.json"
+        result_files["track"] = os.path.join(resfile_path, "tao_track.json")
         mmcv.dump(track_results, result_files["track"])
 
         return result_files, tmp_dir
@@ -252,6 +252,7 @@ class TaoDataset(CocoVideoDataset):
             default_eval_config["DISPLAY_LESS_PROGRESS"] = True
             default_eval_config["OUTPUT_TEM_RAW_DATA"] = True
             default_eval_config["NUM_PARALLEL_CORES"] = 8
+            default_eval_config["USE_PARALLEL"] = os.name != 'nt'  # Disable on Windows
             default_dataset_config = teta.config.get_default_dataset_config()
             default_dataset_config["TRACKERS_TO_EVAL"] = ["OVTrack"]
             default_dataset_config["GT_FOLDER"] = self.ann_file
@@ -314,7 +315,10 @@ class TaoDataset(CocoVideoDataset):
             eval_results["bbox_mAP_copypaste"] = ap_summary
 
         if tmp_dir is not None:
-            tmp_dir.cleanup()
+            try:
+                tmp_dir.cleanup()
+            except Exception as e:
+                print(f"[Windows Info] Temporary directory cleanup deferred: {e}")
 
         return eval_results
 

@@ -257,15 +257,15 @@ class BDDVideoDataset(CocoVideoDataset):
                 )
                 result_files[
                     "track_scalabel"
-                ] = f"{resfile_path}/bdd_track_scalabel.json"
+                ] = os.path.join(resfile_path, "bdd_track_scalabel.json")
                 mmcv.dump(mc_res_scalabel, result_files["track_scalabel"])
 
-            result_files["track_coco"] = f"{resfile_path}/bdd_track_coco.json"
+            result_files["track_coco"] = os.path.join(resfile_path, "bdd_track_coco.json")
             mmcv.dump(mc_res, result_files["track_coco"])
 
         if "bbox_results" in results:
             bbox_results = self._det2json(results["bbox_results"])
-            result_files["bbox"] = f"{resfile_path}/bdd_bbox.json"
+            result_files["bbox"] = os.path.join(resfile_path, "bdd_bbox.json")
             mmcv.dump(bbox_results, result_files["bbox"])
 
         return result_files, tmp_dir

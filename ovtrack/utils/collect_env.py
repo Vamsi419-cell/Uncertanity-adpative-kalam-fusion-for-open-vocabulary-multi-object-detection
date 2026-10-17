@@ -1,6 +1,7 @@
 import cv2
 import mmcv
 import os.path as osp
+import shutil
 import subprocess
 import sys
 import torch
@@ -24,10 +25,13 @@ def collect_env():
 
         if CUDA_HOME is not None and osp.isdir(CUDA_HOME):
             try:
-                nvcc = osp.join(CUDA_HOME, "bin/nvcc")
-                nvcc = subprocess.check_output(f'"{nvcc}" -V | tail -n1', shell=True)
-                nvcc = nvcc.decode("utf-8").strip()
-            except subprocess.SubprocessError:
+                nvcc = osp.join(CUDA_HOME, "bin", "nvcc")
+                if sys.platform == "win32":
+                    nvcc += ".exe"
+                nvcc = subprocess.check_output(
+                    [nvcc, "-V"], stderr=subprocess.STDOUT
+                ).decode("utf-8", errors="replace").splitlines()[-1]
+            except (OSError, subprocess.SubprocessError, IndexError):
                 nvcc = "Not Available"
             env_info["NVCC"] = nvcc
 
@@ -37,9 +41,19 @@ def collect_env():
         for name, devids in devices.items():
             env_info["GPU " + ",".join(devids)] = name
 
-    gcc = subprocess.check_output("gcc --version | head -n1", shell=True)
-    gcc = gcc.decode("utf-8").strip()
-    env_info["GCC"] = gcc
+    compiler = shutil.which("gcc") or shutil.which("clang")
+    if compiler is None and sys.platform == "win32":
+        compiler = shutil.which("cl")
+    if compiler is not None:
+        try:
+            compiler_info = subprocess.check_output(
+                [compiler, "--version"], stderr=subprocess.STDOUT
+            ).decode("utf-8", errors="replace").splitlines()[0]
+        except (OSError, subprocess.SubprocessError, IndexError):
+            compiler_info = "Not Available"
+    else:
+        compiler_info = "Not Available"
+    env_info["Compiler"] = compiler_info
 
     env_info["PyTorch"] = torch.__version__
     env_info["PyTorch compiling details"] = torch.__config__.show()

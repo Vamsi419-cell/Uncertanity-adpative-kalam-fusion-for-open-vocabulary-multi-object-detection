@@ -138,14 +138,12 @@ def run_eval(trial_id, params, trial_dir):
 
     # Match the exact command pattern that worked in Round 1:
     # conda run -n ovtrack python tools/test.py ... > logfile 2>&1
-    cmd = (
-        f'conda run -n ovtrack python tools/test.py '
-        f'{BASE_CONFIG} {CHECKPOINT} '
-        f'--eval track '
-        f'--eval-options resfile_path={abs_trial_dir} '
-        f'--cfg-options {cfg_opts} '
-        f'> "{log_file}" 2>&1'
-    )
+    cmd = [
+        "conda", "run", "-n", "ovtrack", "python",
+        "tools/test.py", BASE_CONFIG, CHECKPOINT,
+        "--eval", "track", "--eval-options",
+        f"resfile_path={abs_trial_dir}", "--cfg-options", *cfg_opts.split(),
+    ]
 
     print(f"\n{'='*70}")
     print(f"  Trial {trial_id}  [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]")
@@ -158,7 +156,15 @@ def run_eval(trial_id, params, trial_dir):
     # Run from project root with PYTHONPATH set as safety belt
     env = os.environ.copy()
     env["PYTHONPATH"] = project_root + os.pathsep + env.get("PYTHONPATH", "")
-    ret = subprocess.run(cmd, shell=True, cwd=project_root, env=env)
+    with open(log_file, "w", encoding="utf-8") as log:
+        ret = subprocess.run(
+            cmd,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            cwd=project_root,
+            env=env,
+            check=False,
+        )
     elapsed = time.time() - t0
 
     # Force garbage collection between trials
