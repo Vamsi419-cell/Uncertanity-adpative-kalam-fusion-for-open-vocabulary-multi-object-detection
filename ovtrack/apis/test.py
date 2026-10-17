@@ -14,6 +14,7 @@ def single_gpu_test(model, data_loader, show=False, out_dir=None, show_score_thr
     results = defaultdict(list)
     dataset = data_loader.dataset
     prog_bar = mmcv.ProgressBar(len(dataset))
+    processed = 0
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             result = model(return_loss=False, rescale=True, **data)
@@ -26,6 +27,13 @@ def single_gpu_test(model, data_loader, show=False, out_dir=None, show_score_thr
         batch_size = data["img"][0].size(0)
         for _ in range(batch_size):
             prog_bar.update()
+        processed = min(processed + batch_size, len(dataset))
+        print(
+            f"\rInference: {processed}/{len(dataset)} images",
+            end="",
+            flush=True,
+        )
+    print()
     return results
 
 
@@ -54,6 +62,7 @@ def multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
     rank, world_size = get_dist_info()
     if rank == 0:
         prog_bar = mmcv.ProgressBar(len(dataset))
+        processed = 0
     time.sleep(2)  # This line can prevent deadlock problem in some cases.
     for i, data in enumerate(data_loader):
         with torch.no_grad():
@@ -69,6 +78,15 @@ def multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
             )
             for _ in range(batch_size * world_size):
                 prog_bar.update()
+            processed = min(processed + batch_size * world_size, len(dataset))
+            print(
+                f"\rInference: {processed}/{len(dataset)} images",
+                end="",
+                flush=True,
+            )
+
+    if rank == 0:
+        print()
 
     # collect results from all ranks
     if gpu_collect:
